@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Text;
@@ -58,6 +59,7 @@ namespace RestHelper
                     using (var reader = new StreamReader(webResponse.GetResponseStream()))
                     {
                         responce.StatusCode = webResponse.StatusCode;
+                        responce.StatusNumber = Convert.ToInt32(webResponse.StatusCode);
                         responce.Content = reader.ReadToEnd();
                     }
                     webResponse.Close();
@@ -67,7 +69,9 @@ namespace RestHelper
             {
                 var resp = ex.Response as HttpWebResponse;
                 responce.StatusCode = resp.StatusCode;
+                responce.StatusNumber = Convert.ToInt32(resp.StatusCode);
                 responce.Content = string.Empty;
+                resp.Close();
             }
             
             return responce;
