@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Net;
-using System.Xml.Serialization;
-using Newtonsoft.Json;
 
 namespace RestHelper
 {
@@ -14,11 +9,11 @@ namespace RestHelper
 
         private string _requestObject;
 
-        private Serialize _serializationType;
-
         private readonly Dictionary<string, string> _bodyParams = new Dictionary<string, string>();
 
         private readonly Dictionary<string, string> _headers = new Dictionary<string, string>();
+
+        public ISerializer Serializer { get; set; }
 
         public Method Method { get; set; }
 
@@ -31,12 +26,22 @@ namespace RestHelper
             get
             {
                 string reqParams = string.Empty;
-                if (_bodyParams.Any())
+                if (Method == Method.GET || Method == Method.DELETE || Serializer == null)
                 {
-                    reqParams = _bodyParams
-                     .Select(item => string.Format("{0}={1}", item.Key, item.Value))
-                     .Aggregate((pair1, pair2) => string.Format("{0}&{1}", pair1, pair2));
+                    if (_bodyParams.Any())
+                    {
+                        reqParams = _bodyParams
+                            .Select(item => string.Format("{0}={1}", item.Key, item.Value))
+                            .Aggregate((pair1, pair2) => string.Format("{0}&{1}", pair1, pair2));
+                    }
                 }
+                else
+                {
+                    reqParams = string.IsNullOrEmpty(_requestObject) 
+                        ? Serializer.Serialize(_bodyParams) 
+                        : Serializer.Merge(_requestObject, _bodyParams);
+                }
+               
                 return reqParams;
             }
         }
@@ -46,8 +51,16 @@ namespace RestHelper
         public RestRequest(string urlTemplate, Method method, Serialize serializationType)
         {
             this._urlTemplate = urlTemplate;
-            this.Method = method;
-            this._serializationType = serializationType;
+            this.Method = method;        
+            switch (serializationType)
+            {
+                case Serialize.Xml:
+                    Serializer = new SerializeToXml();
+                    break;
+                case Serialize.Json:
+                    Serializer = new SerializeToJson();
+                    break;
+            }
         }
 
         public RestRequest(string urlTemplate, Method method) : this(urlTemplate, method, Serialize.None) {}
@@ -71,30 +84,10 @@ namespace RestHelper
 
         public void AddObject(object obj)
         {
-            switch (_serializationType)
+            if (Serializer != null)
             {
-                case Serialize.Xml:
-                    _requestObject = ToXml(obj);
-                    break;
-                case Serialize.Json:
-                    _requestObject = ToJson(obj);
-                    break;
+                _requestObject = Serializer.Serialize(obj);
             }
-        }
-
-        private string ToXml(object obj)
-        {          
-            var serializer = new XmlSerializer(obj.GetType());
-            using (var writer = new StringWriter())
-            {
-                serializer.Serialize(writer, obj);
-                return writer.ToString();
-            }
-        }
-
-        private string ToJson(object obj)
-        {
-            return JsonConvert.SerializeObject(obj, Formatting.Indented);
         }
     }
 }
