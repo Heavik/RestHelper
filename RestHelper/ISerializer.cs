@@ -7,5 +7,7 @@ namespace RestHelper
         string Serialize(object obj);
 
         string Merge(string obj, IDictionary<string, string> reqParams);
+
+        T Deserialize<T>(string obj);
     }
 }

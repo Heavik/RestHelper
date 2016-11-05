@@ -27,6 +27,32 @@ namespace RestHelper
 
         public RestResponce Execute(RestRequest request)
         {
+            PrepareRequest(request);
+            return GetResponce(new RestResponce());
+        }
+
+        public RestResponce<T> Execute<T>(RestRequest request, Serialize serialize = Serialize.Json) where T : new()
+        {
+            PrepareRequest(request);
+            RestResponce<T> responce = null;
+            switch (serialize)
+            {
+                case Serialize.Xml:
+                    responce = new RestResponce<T>(new SerializeToXml());
+                    break;
+                case Serialize.Json:
+                    responce = new RestResponce<T>(new SerializeToJson());
+                    break;
+                default:
+                    responce = new RestResponce<T>();
+                    break;
+            }
+            var resp = GetResponce(responce);
+            return (RestResponce<T>)resp;
+        }
+
+        private void PrepareRequest(RestRequest request)
+        {
             InitRequest(request);
             SetMethod(request);
             SetHeaders(request);
@@ -34,7 +60,6 @@ namespace RestHelper
             {
                 SetRequestBody(request);
             }
-            return GetResponce();           
         }
 
         private void InitRequest(RestRequest request)
@@ -48,9 +73,8 @@ namespace RestHelper
             _webRequest = WebRequest.Create(url);
         }
 
-        private RestResponce GetResponce()
+        private RestResponce GetResponce(RestResponce responce)
         {
-            var responce = new RestResponce();
             try
             {
                 var webResponse = _webRequest.GetResponse() as HttpWebResponse;

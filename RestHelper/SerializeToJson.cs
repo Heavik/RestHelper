@@ -25,5 +25,10 @@ namespace RestHelper
             }
             return json.ToString();
         }
+
+        public T Deserialize<T>(string obj)
+        {
+            return JsonConvert.DeserializeObject<T>(obj);
+        }
     }
 }

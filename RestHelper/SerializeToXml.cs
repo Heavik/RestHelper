@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Xml;
 using System.Xml.Serialization;
 
@@ -43,6 +44,16 @@ namespace RestHelper
             var str = XmlToString(document1);
 
             return str;
+        }
+
+        public T Deserialize<T>(string obj)
+        {
+            var serializer = new XmlSerializer(typeof(T));
+            byte[] arr = Encoding.UTF8.GetBytes(obj);
+            using (var xmlReader = XmlReader.Create(new MemoryStream(arr)))
+            {
+                return (T)serializer.Deserialize(xmlReader);
+            }
         }
 
         private XmlDocument MakeXmlDocument(IDictionary<string, string> reqParams)
