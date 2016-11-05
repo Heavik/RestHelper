@@ -58,8 +58,9 @@ namespace RestHelper
                 {
                     using (var reader = new StreamReader(webResponse.GetResponseStream()))
                     {
-                        responce.StatusCode = webResponse.StatusCode;
+                        responce.StatusCode = webResponse.StatusCode;                       
                         responce.StatusNumber = Convert.ToInt32(webResponse.StatusCode);
+                        responce.Headers = GetResponceHeaders(webResponse);
                         responce.Content = reader.ReadToEnd();
                     }
                     webResponse.Close();
@@ -70,6 +71,7 @@ namespace RestHelper
                 var resp = ex.Response as HttpWebResponse;
                 responce.StatusCode = resp.StatusCode;
                 responce.StatusNumber = Convert.ToInt32(resp.StatusCode);
+                responce.Headers = GetResponceHeaders(resp);
                 responce.Content = string.Empty;
                 resp.Close();
             }
@@ -98,11 +100,22 @@ namespace RestHelper
         private void SetRequestBody(RestRequest request)
         {
             byte[] data = Encoding.UTF8.GetBytes(request.Params);
-                _webRequest.ContentLength = data.Length;
+            _webRequest.ContentLength = data.Length;
             using (var requestStream = _webRequest.GetRequestStream())
             {               
                 requestStream.Write(data, 0, data.Length);
             }
+        }
+
+        private Dictionary<string, string> GetResponceHeaders(HttpWebResponse response)
+        {
+            var headers = new Dictionary<string, string>();
+            foreach(var header in response.Headers.Keys)
+            {
+                headers.Add(header.ToString(), response.Headers[header.ToString()]);
+            }
+
+            return headers;
         }
     }
 }
